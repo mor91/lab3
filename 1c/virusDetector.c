@@ -11,6 +11,14 @@ typedef struct virus virus;
 		char *name;
 		virus *next;
 };
+void printHex(char buffer[], int length){
+    
+    int i;
+    for(i=0; i<length;i++)
+    	printf("%02X ", buffer[i]);
+    printf("\n");
+}
+
 void print_data(virus *virus_node){
     printf("name: %s\n", virus_node->name);
     printf("length: %d\n", virus_node->length);
@@ -50,14 +58,13 @@ void list_free(virus *virus_list){
         virus *nextVirus=virus_list;
         while(tempVirus->next!=NULL){
             nextVirus=tempVirus->next;
-            free(tempVirus->length);
             free(tempVirus->name);
             free(tempVirus->signature);
-            free(tempVirus->next);
             tempVirus=nextVirus;     
         }
     }
 }
+
 
 
 int power(int num1, int num2){
@@ -79,13 +86,7 @@ int convertToInt(char string[]){
 	return res;
 
 }
-void printHex(char buffer[], int length){
-    
-    int i;
-    for(i=0; i<length;i++)
-    	printf("%02X ", buffer[i]);
-    printf("\n");
-}
+
 virus* split(char buffer[], int length){
     virus* virus_list=NULL;
     int i=0;
@@ -111,7 +112,7 @@ virus* split(char buffer[], int length){
 	    i=j+1;
             virus* virus=NULL;
             virus=malloc(sizeof(virus));
-            virus->length=malloc(sizeof(int));
+            /*virus->length=malloc(sizeof(int));*/
             virus->length=N;
             virus->signature=malloc(sizeof(signature));
             virus->signature=signature;
@@ -123,6 +124,30 @@ virus* split(char buffer[], int length){
     return virus_list;
 
 }
+void printDetect(int i,char name[], int size){
+    printf("Infected file!\n");
+    printf( "starting byte location in the file: %d\n", i);
+    printf("The virus name: %s\n", name);
+    printf("The size of the virus: %d\n", size);
+    
+}
+void detect_virus(char *buffer, virus *virus_list, unsigned int size){
+    int i;
+    virus* tempVirus=virus_list;
+    int isInfected=0;
+    for(i=0;i<size;i++){
+        while(!isInfected){
+            if(memcmp(tempVirus->signature, &buffer[i], tempVirus->length)==0){
+                printDetect(i, tempVirus->name, tempVirus->length);
+                isInfected=1;
+            }
+            if(tempVirus->next!=NULL)
+                tempVirus=tempVirus->next;
+            else break;
+        }
+        tempVirus=virus_list;   
+    }
+}
 int main(int argc, char* argv[])
 {
    FILE *fp;
@@ -133,9 +158,22 @@ int main(int argc, char* argv[])
    int length=fread(buffer,1, sizeof(buffer) , fp);
    virus* virus_list;
    virus_list=split(buffer, length);
-   list_print(virus_list);
-   getchar();
+   unsigned char bufferfile[10000];
+   memset(bufferfile,0,sizeof(bufferfile));
+   FILE *file;
+   file=fopen("infected","r");
+   fseek(fp, 0 ,SEEK_SET);
+   int filesize=fread(bufferfile,1, sizeof(bufferfile) , file);
+   unsigned int size;
+   if(filesize< sizeof(bufferfile))
+       size=filesize;
+   else size=sizeof(bufferfile);
+   detect_virus(bufferfile, virus_list, size);
    fclose(fp);
+   fclose(file);
+   list_free(virus_list);
+   
+   getchar();
    return(0);
 }
 

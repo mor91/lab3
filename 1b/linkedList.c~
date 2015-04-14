@@ -1,0 +1,143 @@
+
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+
+typedef struct virus virus;
+	 
+	struct virus {
+		int length;
+		char *signature;
+		char *name;
+		virus *next;
+};
+void print_data(virus *virus_node){
+    printf("name: %s\n", virus_node->name);
+    printf("length: %d\n", virus_node->length);
+    printf("signature: \n");
+    printHex(virus_node->signature, virus_node->length); 
+    printf("\n");
+}
+
+void list_print(virus *virus_list){
+    if(virus_list!=NULL){
+        virus *tempVirus=virus_list;
+        print_data(tempVirus);
+        while (tempVirus->next!=NULL){
+            tempVirus=tempVirus->next;
+            print_data(tempVirus);
+        }
+    }
+}
+virus *list_append(virus *virus_list, virus *data){
+    if(virus_list!=NULL){
+        virus *tempVirus=virus_list;
+        while(tempVirus->next!=NULL){
+            tempVirus=tempVirus->next;
+        }
+        tempVirus->next=malloc(sizeof(virus));
+        tempVirus->next=data;
+    }
+    else {
+        virus_list=malloc(sizeof(virus));
+        virus_list=data;
+    }
+    return virus_list;
+}
+void list_free(virus *virus_list){
+    if(virus_list!=NULL){
+        virus *tempVirus=virus_list;
+        virus *nextVirus=virus_list;
+        while(tempVirus->next!=NULL){
+            nextVirus=tempVirus->next;
+            free(tempVirus->length);
+            free(tempVirus->name);
+            free(tempVirus->signature);
+            free(tempVirus->next);
+            tempVirus=nextVirus;     
+        }
+    }
+}
+
+
+int power(int num1, int num2){
+    int i;
+    int j=1;
+    for(i=0; i<num2 ;i++){
+        j*=num1;
+    }
+    return j;
+}
+
+int convertToInt(char string[]){
+	int len=strlen(string);
+	int i;
+	int res=0;
+	for(i=0; i<len; i++){
+		res=res+(power(256,i)*string[i]);        
+        }
+	return res;
+
+}
+void printHex(char buffer[], int length){
+    
+    int i;
+    for(i=0; i<length;i++)
+    	printf("%02X ", buffer[i]);
+    printf("\n");
+}
+virus* split(char buffer[], int length){
+    virus* virus_list=NULL;
+    int i=0;
+    int j;
+    int N;
+    while(i<length){
+	    char * size = malloc(sizeof(char)*4);;
+	    memset(size,0,sizeof(size));
+            int tempsize=i+4;
+	    for(i; i<tempsize;i++)
+	    	size[tempsize-4-i]=buffer[i];
+	    N=convertToInt(size);
+	    char * signature = malloc(sizeof(char)*N);; 
+            memset(signature,0,sizeof(signature));
+            int tempN=N+i;
+	    for( j=i ; j<tempN; j++)
+		signature[j-i]=buffer[j];
+	    i=j;
+            char * name = malloc(sizeof(char)*100); 
+            memset(name,0,sizeof(name));
+	    for(j=i; buffer[j]!=0 ; j++)
+		name[j-i]=buffer[j];
+	    i=j+1;
+            virus* virus=NULL;
+            virus=malloc(sizeof(virus));
+            virus->length=malloc(sizeof(int));
+            virus->length=N;
+            virus->signature=malloc(sizeof(signature));
+            virus->signature=signature;
+            virus->name=malloc(sizeof(name));
+            virus->name=name;
+            virus->next=NULL;
+            virus_list=list_append(virus_list, virus);
+    }
+    return virus_list;
+
+}
+int main(int argc, char* argv[])
+{
+   FILE *fp;
+   unsigned char buffer[500];
+   memset(buffer,0,sizeof(buffer));
+   fp = fopen("signatures", "r");
+   fseek(fp, 0, SEEK_SET);
+   int length=fread(buffer,1, sizeof(buffer) , fp);
+   virus* virus_list;
+   virus_list=split(buffer, length);
+   list_print(virus_list);
+   getchar();
+   fclose(fp);
+   return(0);
+}
+
+
+
